@@ -1,5 +1,6 @@
 package com.sethu.backend.service;
 
+import com.google.zxing.WriterException;
 import com.sethu.backend.dto.ApiResponse;
 import com.sethu.backend.dto.DesignDTO;
 import com.sethu.backend.mapper.DesignMapper;
@@ -10,6 +11,7 @@ import com.sethu.backend.repo.DesignRepo;
 import com.sethu.backend.repo.OrganisationRepo;
 import com.sethu.backend.utils.SubcontainerUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -20,19 +22,22 @@ import java.util.List;
 
 @Service
 public class DesignService {
-
+    @Value("${qr.baseurl}")
+    String qrBaseUrl;
     @Autowired
     SubcontainerUtils subcontainerUtils;
     @Autowired
     DesignRepo designRepo;
 
     @Autowired
+    QRService qrService;
+    @Autowired
     CloudinaryService cloudinaryService;
     @Autowired
     OrganisationRepo orgRepo;
     @Autowired
     DesignMapper designMapper;
-    public ResponseEntity<ApiResponse<Object>> createDesign(String subContainerId,String orgId, DesignDTO designDTO  , MultipartFile designImage) throws IOException {
+    public ResponseEntity<ApiResponse<Object>> createDesign(String subContainerId,String orgId, DesignDTO designDTO  , MultipartFile designImage) throws IOException, WriterException {
         Organisation org = orgRepo.findByOrganisationId(orgId);
         if(org == null){
             ApiResponse<Object> response = new ApiResponse<>(false,"organisation not found",orgId);
@@ -49,7 +54,9 @@ public class DesignService {
         Design savedDesign = designRepo.save(design);
         String imageId = cloudinaryService.uploadImage(designImage,org.getOrganisationId()+"/"+savedDesign.getDesignId());
         savedDesign.setImageId(imageId);
-
+        String url = qrBaseUrl+"design/"+savedDesign.getDesignId();
+        byte[] qrByreArray = qrService.getQRCodeImage(url,200,200);
+        cloudinaryService.uploadByteArray(qrByreArray,org.getOrganisationId()+"/"+savedDesign.getDesignId());
         Design newSavedDesign = designRepo.save(savedDesign);
         DesignDTO savedDesignDTO = new DesignDTO();
         designMapper.DesigntoDesignDTO(newSavedDesign,savedDesignDTO);

@@ -1,6 +1,7 @@
 package com.sethu.backend.controller;
 
 import com.fasterxml.jackson.annotation.JsonView;
+import com.google.zxing.WriterException;
 import com.sethu.backend.dto.ApiResponse;
 import com.sethu.backend.dto.DesignDTO;
 import com.sethu.backend.model.Design;
@@ -30,7 +31,7 @@ public class DesignController {
      @RequestParam(name = "subContainerId") String subContainerId,
      @RequestParam(name = "orgId") String orgId
 
-    ) throws IOException {
+    ) throws IOException, WriterException {
         return designService.createDesign(subContainerId,orgId,design,designImage);
     }
 
