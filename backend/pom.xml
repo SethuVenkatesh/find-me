@@ -27,7 +27,7 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>17</java.version>
+		<java.version>21</java.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -92,13 +92,96 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>org.jooq</groupId>
+			<artifactId>jooq</artifactId>
+			<version>3.20.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jooq</artifactId>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.jooq</groupId>
+				<artifactId>jooq-codegen-maven</artifactId>
+				<version>3.20.1</version>
+				<executions>
+					<execution>
+						<id>jooq-codegen</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<jdbc>
+								<driver>org.postgresql.Driver</driver>
+								<url>jdbc:postgresql://localhost:5432/QRSystem</url>
+								<user>postgres</user>
+								<password>postgres</password>
+							</jdbc>
+							<generator>
+								<database>
+									<name>org.jooq.meta.postgres.PostgresDatabase</name>
+									<includes>.*</includes>
+<!--									<excludes>schema_version | schema_version_1</excludes> add this when you need to exclude certain tables-->
+									<schemata>
+										<schema>
+											<inputSchema>dev</inputSchema>
+											<outputSchemaToDefault>true</outputSchemaToDefault>
+										</schema>
+<!--										<schema>-->
+<!--											<inputSchema>test_1</inputSchema>-->
+<!--										</schema> add this when you need to include multiple schemas-->
+									</schemata>
+								</database>
+								<generate>
+									<deprecated>false</deprecated>
+									<records>true</records>
+									<immutablePojos>true</immutablePojos>
+									<fluentSetters>true</fluentSetters>
+									<globalCatalogReferences>false</globalCatalogReferences>
+								</generate>
+								<target>
+									<packageName>generated.jooq</packageName>`
+									<directory>src/main/generated</directory>
+								</target>
+							</generator>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<id>jooq-post-generate</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<echo message="Deleted existing jooq directory if it exists"/>
+								<delete dir="${basedir}/src/main/java/generated"/>
+
+								<echo message="Move the entire directory from src/main/generated/generated to src/main/java/generated"/>
+								<move file="${basedir}/src/main/generated/generated" tofile="${basedir}/src/main/java/generated"/>
+
+								<echo message="Clean up src/main/generated directory"/>
+								<delete dir="${basedir}/src/main/generated"/>
+							</target>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
